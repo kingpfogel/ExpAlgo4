@@ -1,0 +1,103 @@
+builds:
+  - name: mssp
+    git: none
+    configure:
+      - args:
+        - 'meson'
+        - '--prefix=@THIS_PREFIX_DIR@'
+        - '--buildtype=debugoptimized'
+        - '--native-file=@THIS_SOURCE_DIR@/native.meson'
+        - '@THIS_SOURCE_DIR@'
+    compile:
+      - args: ['ninja']
+    install:
+      - args: ['ninja', 'install']
+
+revisions:
+  - develop: true
+    build_version:
+      'mssp': ''
+
+experiments:
+  - name: cpu-dijkstra
+    use_builds: [mssp]
+    args: ['mssp-cpu', 'parallel-dijkstra', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+  - name: cpu-bf
+    use_builds: [mssp]
+    args: ['mssp-cpu', 'batch-bf', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+  - name: gpu-bf
+    use_builds: [mssp]
+    args: ['mssp-gpu', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+
+variants:
+  - axis: batchsize
+    items:
+      - name: b32
+        extra_args: ['32']
+      - name: b64
+        extra_args: ['64']
+      - name: b128
+        extra_args: ['128']
+      - name: b256
+        extra_args: ['256']
+      - name: b512
+        extra_args: ['512']
+      - name: b1024
+        extra_args: ['1024']
+      - name: b2048
+        extra_args: ['2048']
+      - name: b4096
+        extra_args: ['4096']
+      - name: b8192
+        extra_args: ['8192']
+      - name: b16384
+        extra_args: ['16384']
+  - axis: threads
+    items:
+      - name: t01
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 1
+      - name: t02
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 2
+      - name: t04
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 4
+      - name: t08
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 8
+      - name: t16
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 16
+      - name: t32
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 32
+      - name: t64
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 64
+
+matrix:
+    include:
+        # Single-threaded experiments for the batch size.
+        - experiments: [cpu-dijkstra, cpu-bf, gpu-bf]
+          variants: [t01]
+
+        # Scaling experiments for batched Bellman-Ford only.
+        - experiments: [cpu-bf]
+          variants: [b1024]
+
+instances:
+  - repo: local
+    items:
+      - cit-patent.edges
+      - roadNet-TX.mtx

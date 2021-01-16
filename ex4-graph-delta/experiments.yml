@@ -1,0 +1,78 @@
+builds:
+  - name: delta
+    git: none
+    configure:
+      - args:
+        - 'meson'
+        - '--prefix=@THIS_PREFIX_DIR@'
+        - '--buildtype=debugoptimized'
+        - '--native-file=@THIS_SOURCE_DIR@/native.meson'
+        - '@THIS_SOURCE_DIR@'
+    compile:
+      - args: ['ninja']
+    install:
+      - args: ['ninja', 'install']
+
+revisions:
+  - develop: true
+    build_version:
+      'delta': ''
+
+experiments:
+  - name: dijkstra
+    use_builds: [delta]
+    args: ['sssp', 'dijkstra', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+  - name: bf
+    use_builds: [delta]
+    args: ['sssp', 'bf', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+  - name: delta
+    use_builds: [delta]
+    args: ['sssp', 'delta', '@INSTANCE@', '@EXTRA_ARGS@']
+    stdout: out
+
+variants:
+  - axis: threads
+    items:
+      - name: t01
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 1
+      - name: t02
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 2
+      - name: t04
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 4
+      - name: t08
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 8
+      - name: t16
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 16
+      - name: t32
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 32
+      - name: t64
+        extra_args: []
+        environ:
+            OMP_NUM_THREADS: 64
+
+matrix:
+    include:
+        - experiments: [dijkstra]
+          axes: []
+        - experiments: [bf, delta]
+          axes: [threads]
+
+instances:
+  - repo: local
+    items:
+      - cit-patent.edges
+      - roadNet-TX.mtx

@@ -1,0 +1,2 @@
+[binaries]
+cuda = '/usr/local/cuda-11.1/bin/nvcc'
