@@ -51,12 +51,12 @@ struct batch_bellman_ford {
     }
 
     void run(const csr_matrix &tr, const std::vector<unsigned int> &sources) {
-        std::vector<std::vector<float>> single_d;
+        std::vector<float> single_d;
         single_d.resize(tr.n);
-        std::vector<std::vector<float>> d_null;
+        std::vector<float> d_null;
         d_null.resize(tr.n);
         unsigned int k = sources.size();
-
+        std::fill(single_d.begin(), single_d.end(), FLT_MAX);
         ds.resize(k);
         ds_new.resize(k);
         std::fill(ds.begin(), ds.end(), single_d);
@@ -65,7 +65,7 @@ struct batch_bellman_ford {
             ds[i][sources[i]] = 0;
         }
         bool changes = false;
-
+        #pragma omp parallel
         for(unsigned int a = 0; a < sources.size(); ++a ){
             auto &d = ds[a];
             auto &d_new = ds_new[a];
