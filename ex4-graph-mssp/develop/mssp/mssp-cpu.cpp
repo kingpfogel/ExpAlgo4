@@ -55,22 +55,18 @@ struct batch_bellman_ford {
         single_d.resize(tr.n);
         std::vector<std::vector<float>> d_null;
         d_null.resize(tr.n);
-        std::fill(single_d.begin(), single_d.end(), FLT_MAX);
-
-//            d[s] = 0;
-        unsigned int n = 0;
         unsigned int k = sources.size();
 
         ds.resize(k);
         ds_new.resize(k);
         std::fill(ds.begin(), ds.end(), single_d);
         std::fill(ds_new.begin(), ds_new.end(), d_null);
-        for(auto i = 0; i < sources.size(); ++i){
+        for(unsigned int i = 0; i < sources.size(); ++i){
             ds[i][sources[i]] = 0;
         }
         bool changes = false;
 
-        for(auto a = 0; a < sources.size(); ++a ){
+        for(unsigned int a = 0; a < sources.size(); ++a ){
             auto &d = ds[a];
             auto &d_new = ds_new[a];
             #pragma omp parallel
