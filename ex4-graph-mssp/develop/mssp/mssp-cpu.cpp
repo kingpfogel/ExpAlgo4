@@ -51,37 +51,41 @@ struct batch_bellman_ford {
     }
 
     void run(const csr_matrix &tr, const std::vector<unsigned int> &sources) {
-        std::vector<float> single_d;
-        single_d.resize(tr.n);
-        std::vector<float> d_null;
-        d_null.resize(tr.n);
+//        std::vector<float> single_d;
+//        single_d.resize(tr.n);
+//        std::vector<float> d_null;
+//        d_null.resize(tr.n);
+//        unsigned int k = sources.size();
+//        std::fill(single_d.begin(), single_d.end(), FLT_MAX);
+//        ds.resize(k);
+//        ds_new.resize(k);
+//        std::fill(ds.begin(), ds.end(), single_d);
+//        std::fill(ds_new.begin(), ds_new.end(), d_null);
         unsigned int k = sources.size();
-        std::fill(single_d.begin(), single_d.end(), FLT_MAX);
-        ds.resize(k);
-        ds_new.resize(k);
-        std::fill(ds.begin(), ds.end(), single_d);
-        std::fill(ds_new.begin(), ds_new.end(), d_null);
-        for(unsigned int i = 0; i < sources.size(); ++i){
-            ds[i][sources[i]] = 0;
+        d.resize(tr.n*k);
+        d_new.resize(tr.n*k);
+        std::fill(d.begin(), d.end(), FLT_MAX);
+        for(unsigned int i = 0; i < k; ++i){
+            d[sources[i]+i*tr.n] = 0;
         }
         bool changes = false;
         #pragma omp parallel
         for(unsigned int a = 0; a < sources.size(); ++a ){
-            auto &d = ds[a];
-            auto &d_new = ds_new[a];
+//            auto &d = ds[a];
+//            auto &d_new = ds_new[a];
             #pragma omp parallel
             {
                 do {
                     #pragma omp for reduction(||: changes)
                     for (unsigned int v = 0; v < tr.n; ++v) {
-                        d_new[v] = d[v];
+                        d_new[v+a*tr.n] = d[v+a*tr.n];
 
                         for (unsigned int i = tr.ind[v]; i < tr.ind[v + 1]; ++i) {
                             auto u = tr.cols[i]; // Kante: v -> u in tr, u -> v im Input.
                             auto weight = tr.weights[i];
 
-                            if (d_new[v] > d[u] + weight) {
-                                d_new[v] = d[u] + weight;
+                            if (d_new[v+a*tr.n] > d[u+a*tr.n] + weight) {
+                                d_new[v+a*tr.n] = d[u+a*tr.n] + weight;
                                 changes = true;
                             }
                         }
@@ -95,8 +99,10 @@ struct batch_bellman_ford {
     }
 
 private:
-    std::vector<std::vector<float>> ds_new;
-    std::vector<std::vector<float>> ds;
+//    std::vector<std::vector<float>> ds_new;
+//    std::vector<std::vector<float>> ds;
+    std::vector<float> d_new;
+    std::vector<float> d;
 };
 
 int main(int argc, char **argv) {
