@@ -55,7 +55,7 @@ void run_bf(const csr_matrix &tr, unsigned int batchsize,
 
     auto algo_start = std::chrono::high_resolution_clock::now();
     std::vector<float> initial;
-    initial.resize(tr.n*n_sources);
+    initial.resize(tr.n * n_sources);
     std::fill(initial.begin(), initial.end(), FLT_MAX);
 
     for(unsigned int i = 0; i < sources.size(); ++i) {
