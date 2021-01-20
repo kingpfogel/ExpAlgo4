@@ -9,22 +9,25 @@
 __global__ void bf_iteration(int n, int s,
                              unsigned int *csr_index, unsigned int *csr_cols, float *csr_weights,
                              float *d, float *d_new, int *result) {
-    auto thisThread = blockIdx.x * blockDim.x + threadIdx.x;
-    auto numThreads = gridDim.x + blockDim.x;
-    uint64_t indexAddition = (uint64_t)n*(uint64_t)s;
+    uint64_t thisThread = (uint64_t)blockIdx.x * (uint64_t)blockDim.x + (uint64_t)threadIdx.x;
+    uint64_t numThreads = (uint64_t)gridDim.x + (uint64_t)blockDim.x;
+    uint64_t maxIndex = (uint64_t)n*(uint64_t)s;
     bool changes = false;
-    for (uint64_t v = thisThread; v < n; v += numThreads) {
-        float dist = d[v+indexAddition];
+    for (uint64_t v = thisThread; v < maxIndex; v += numThreads) {
+        float dist;
         for(uint64_t i = csr_index[v]; i < csr_index[v + 1]; ++i) {
             auto u = csr_cols[i];
             auto weight = csr_weights[i];
-
-            if(dist > d[(uint64_t)u+indexAddition] + weight) {
-                dist = d[(uint64_t)u+indexAddition] + weight;
-                changes = true;
+            uint_64_t sss = (uint64_t)u*(uint64_t)s;
+            for(uint64_t o = 0; o < s; ++o){
+                dist = d[v+o];
+                if(dist > d[sss+o] + weight) {
+                    d_new[v+o] = d[sss+o] + weight;
+                    changes = true;
+                }
             }
+
         }
-        d_new[v+indexAddition] = dist;
     }
     if(changes)
         *result = 1;
@@ -60,7 +63,7 @@ void run_bf(const csr_matrix &tr, unsigned int batchsize,
     std::fill(initial.begin(), initial.end(), FLT_MAX);
 
     for(unsigned int i = 0; i < sources.size(); ++i) {
-        initial[(uint64_t)sources[i] + (uint64_t)i * (uint64_t)tr.n] = 0;
+        initial[(uint64_t)sources[i] + i] = 0;
     }
     cudaMemcpy(d, initial.data(), (uint64_t)n_sources * (uint64_t)tr.n * (uint64_t)sizeof(float), cudaMemcpyHostToDevice);
 
