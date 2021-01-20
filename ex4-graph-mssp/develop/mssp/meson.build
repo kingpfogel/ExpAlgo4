@@ -10,6 +10,5 @@ executable('mssp-cpu',
 
 executable('mssp-gpu',
 	'mssp-gpu.cu',
-    dependencies: omp,
 	override_options: ['cpp_std=c++17'],
 	install: true)
