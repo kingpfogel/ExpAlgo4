@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <stdint.h>
 
 #include "csr.hpp"
 
@@ -10,16 +11,16 @@ __global__ void bf_iteration(int n, int s,
                              float *d, float *d_new, int *result) {
     auto thisThread = blockIdx.x * blockDim.x + threadIdx.x;
     auto numThreads = gridDim.x + blockDim.x;
-    auto indexAddition = n*s;
+    uint64_t indexAddition = (uint64_t)n*(uint64_t)s;
     bool changes = false;
-    for (unsigned int v = thisThread; v < n; v += numThreads) {
+    for (uint64_t v = thisThread; v < n; v += numThreads) {
         float dist = d[v+indexAddition];
-        for(unsigned int i = csr_index[v]; i < csr_index[v + 1]; ++i) {
+        for(uint64_t i = csr_index[v]; i < csr_index[v + 1]; ++i) {
             auto u = csr_cols[i];
             auto weight = csr_weights[i];
 
-            if(dist > d[u+indexAddition] + weight) {
-                dist = d[u+indexAddition] + weight;
+            if(dist > d[(uint64_t)u+indexAddition] + weight) {
+                dist = d[(uint64_t)u+indexAddition] + weight;
                 changes = true;
             }
         }
@@ -45,8 +46,8 @@ void run_bf(const csr_matrix &tr, unsigned int batchsize,
     cudaMalloc(&csr_index, (tr.n + 1) * sizeof(unsigned int));
     cudaMalloc(&csr_cols, tr.nnz * sizeof(unsigned int));
     cudaMalloc(&csr_weights, tr.nnz * sizeof(float));
-    cudaMalloc(&d, tr.n * n_sources * sizeof(float));
-    cudaMalloc(&d_new, tr.n * n_sources * sizeof(float));
+    cudaMalloc(&d, (uint64_t)tr.n * (uint64_t)n_sources * (uint64_t)sizeof(float));
+    cudaMalloc(&d_new, (uint64_t)tr.n * (uint64_t)n_sources * (uint64_t)sizeof(float));
     cudaMalloc(&result, sizeof(int));
 
     cudaMemcpy(csr_index, tr.ind.data(), (tr.n + 1) * sizeof(unsigned int), cudaMemcpyHostToDevice);
@@ -55,13 +56,13 @@ void run_bf(const csr_matrix &tr, unsigned int batchsize,
 
     auto algo_start = std::chrono::high_resolution_clock::now();
     std::vector<float> initial;
-    initial.resize(tr.n * n_sources);
+    initial.resize((uint64_t)tr.n * (uint64_t)n_sources);
     std::fill(initial.begin(), initial.end(), FLT_MAX);
 
     for(unsigned int i = 0; i < sources.size(); ++i) {
-        initial[sources[i] + i * tr.n] = 0;
+        initial[(uint64_t)sources[i] + (uint64_t)i * (uint64_t)tr.n] = 0;
     }
-    cudaMemcpy(d, initial.data(), n_sources * tr.n * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d, initial.data(), (uint64_t)n_sources * (uint64_t)tr.n * (uint64_t)sizeof(float), cudaMemcpyHostToDevice);
 
     for(unsigned int i = 0; i< sources.size(); ++i){
         while(true) {
