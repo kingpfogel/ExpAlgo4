@@ -19,17 +19,9 @@ revisions:
       'mssp': ''
 
 experiments:
-  - name: cpu-dijkstra
-    use_builds: [mssp]
-    args: ['mssp-cpu', 'parallel-dijkstra', '@INSTANCE@', '@EXTRA_ARGS@']
-    stdout: out
   - name: cpu-bf
     use_builds: [mssp]
     args: ['mssp-cpu', 'batch-bf', '@INSTANCE@', '@EXTRA_ARGS@']
-    stdout: out
-  - name: gpu-bf
-    use_builds: [mssp]
-    args: ['mssp-gpu', '@INSTANCE@', '@EXTRA_ARGS@']
     stdout: out
 
 variants:
@@ -89,7 +81,7 @@ variants:
 matrix:
     include:
         # Single-threaded experiments for the batch size.
-        - experiments: [cpu-dijkstra, cpu-bf, gpu-bf]
+        - experiments: [gpu-bf]
           variants: [t01]
 
         # Scaling experiments for batched Bellman-Ford only.

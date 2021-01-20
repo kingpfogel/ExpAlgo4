@@ -46,52 +46,53 @@ private:
 
 struct batch_bellman_ford {
     batch_bellman_ford(unsigned int batchsize) {
-        ds.resize(batchsize);
-        ds_new.resize(batchsize);
+        batches = batchsize;
     }
 
     void run(const csr_matrix &tr, const std::vector<unsigned int> &sources) {
-        std::vector<float> single_d;
-        std::vector<float> d_null;
-        single_d.resize(tr.n);
-        d_null.resize(tr.n);
-        std::fill(single_d.begin(), single_d.end(), FLT_MAX);
-        std::fill(ds.begin(), ds.end(), single_d);
-        std::fill(ds_new.begin(), ds_new.end(), d_null);
+        std::vector<float> single(batches, FLT_MAX);
+        std::vector<float> single_new(batches);
 
+        ds_new.resize(tr.n);
+        ds.resize(tr.n);
+        std::fill(ds.begin(), ds.end(), single);
+        std::fill(ds_new.begin(), ds_new.end(), single_new);
+//        d[s] = 0;
+        for(unsigned int i = 0; i < batches; ++i){
+            ds[sources[i]][i] = 0;
+        }
         bool changes = false;
-        for(unsigned int a = 0; a < sources.size(); ++a ){
-            ds[a][sources[a]] = 0;
-            auto &d = ds[a];
-            auto &d_new = ds_new[a];
-            #pragma omp parallel
-            {
-                do {
-                    #pragma omp for reduction(||: changes)
-                    for (unsigned int v = 0; v < tr.n; ++v) {
-                        d_new[v] = d[v];
 
-                        for (unsigned int i = tr.ind[v]; i < tr.ind[v + 1]; ++i) {
-                            auto u = tr.cols[i]; // Kante: v -> u in tr, u -> v im Input.
-                            auto weight = tr.weights[i];
+        #pragma omp parallel
+        {
+            do {
+                #pragma omp for reduction(||: changes)
+                for(unsigned int v = 0; v < tr.n; ++v) {
+                    ds_new[v] = ds[v];
 
-                            if (d_new[v+a*tr.n] > d[u] + weight) {
-                                d_new[v] = d[u] + weight;
+                    for(unsigned int i = tr.ind[v]; i < tr.ind[v + 1]; ++i) {
+                        auto u = tr.cols[i]; // Kante: v -> u in tr, u -> v im Input.
+                        auto weight = tr.weights[i];
+                        for(unsigned int j = 0; j < batches; ++j){
+                            if(ds_new[v][j] > ds[u][j] + weight) {
+                                ds_new[v][j] = ds[u][j] + weight;
                                 changes = true;
                             }
                         }
-                    }
 
-                    #pragma omp single
-                    std::swap(d, d_new);
-                } while (changes);
-            }
+                    }
+                }
+
+                #pragma omp single
+                std::swap(ds, ds_new);
+            } while(changes);
         }
     }
 
 private:
     std::vector<std::vector<float>> ds_new;
     std::vector<std::vector<float>> ds;
+    unsigned int batches;
 };
 
 int main(int argc, char **argv) {
