@@ -94,7 +94,7 @@ matrix:
 
         # Scaling experiments for batched Bellman-Ford only.
         - experiments: [cpu-bf]
-          variants: [b32]
+          variants: [b1024]
 
 instances:
   - repo: local
