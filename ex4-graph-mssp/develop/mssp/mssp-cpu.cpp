@@ -69,7 +69,6 @@ struct batch_bellman_ford {
             d[sources[i]+i*tr.n] = 0;
         }
         bool changes = false;
-        #pragma omp parallel
         for(unsigned int a = 0; a < sources.size(); ++a ){
 //            auto &d = ds[a];
 //            auto &d_new = ds_new[a];
