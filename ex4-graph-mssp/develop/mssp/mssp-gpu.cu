@@ -18,7 +18,7 @@ __global__ void bf_iteration(int n, int s,
         for(uint64_t i = csr_index[v]; i < csr_index[v + 1]; ++i) {
             auto u = csr_cols[i];
             auto weight = csr_weights[i];
-            uint_64_t sss = (uint64_t)u*(uint64_t)s;
+            uint64_t sss = (uint64_t)u*(uint64_t)s;
             for(uint64_t o = 0; o < s; ++o){
                 dist = d[v+o];
                 if(dist > d[sss+o] + weight) {
